@@ -83,6 +83,23 @@ namespace xt
         using value_type = typename std::decay_t<E>::value_type;
 
         auto out = e;
+        auto new_shape = e.shape();
+        xt::xstrided_slice_vector sv;
+        for (size_type axis = 0; axis < e.shape().size(); ++axis) {
+            size_type nb = static_cast<size_type>(pad_width[axis][0]);
+            size_type ne = static_cast<size_type>(pad_width[axis][1]);
+
+            size_type ns = nb + e.shape(axis) + ne;
+            new_shape[axis] = ns;
+            sv.push_back(xt::range(nb, nb + e.shape(axis)));
+        }
+
+        if (mode == pad_mode::constant)
+        {
+            typename std::remove_reference<E &>::type conc_out = constant_value * xt::ones<value_type>(new_shape);
+            xt::strided_view(conc_out, sv) = e;
+            return conc_out;
+        }
 
         for (size_type axis = 0; axis < e.shape().size(); ++axis)
         {
